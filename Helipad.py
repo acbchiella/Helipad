@@ -13,17 +13,27 @@ class Helipad:
             image: Optional[npt.ArrayLike] = None,
             color_mask: Optional[npt.ArrayLike] = None
     ) -> None:
-        self.set_image(image)
-        self.set_color_mask(color_mask)
+        self._image = image
+        self._color_mask = color_mask
 
-    def set_image(self, image: Optional[npt.ArrayLike] = None):
-        self.image = image
+    @property
+    def image(self):
+        return self._image
 
-    def set_color_mask(self, color_mask: Optional[npt.ArrayLike] = None):
-        self.color_mask = color_mask
+    @image.setter
+    def image(self, image: Optional[npt.ArrayLike] = None):
+        self._image = image
 
-    @classmethod
-    def _apply_color_mask(cls, image: npt.ArrayLike, color: npt.ArrayLike) -> npt.ArrayLike:
+    @property
+    def color_mask(self) -> Optional[npt.ArrayLike]:
+        return self._color_mask
+
+    @color_mask.setter
+    def color_mask(self, color_mask: Optional[npt.ArrayLike] = None):
+        self._color_mask = color_mask
+
+    @staticmethod
+    def _apply_color_mask(image: npt.ArrayLike, color: npt.ArrayLike) -> npt.ArrayLike:
         assert color.shape == (3,)
 
         color_tolerance = 35
@@ -48,7 +58,7 @@ class Helipad:
 
     def find_circle(self, filtered_image: Optional[npt.ArrayLike] = None) -> npt.ArrayLike:
         if filtered_image is None:
-            filtered_image = self.image
+            filtered_image = self._image
 
         gray_blurred = cv2.GaussianBlur(filtered_image, (9, 9), 2)
         circles = cv2.HoughCircles(
@@ -78,7 +88,7 @@ class Helipad:
         pass
 
     def find_helipad(self) -> npt.ArrayLike:
-        filtered_image = self.__class__._apply_color_mask(self.image, self.color_mask)
+        filtered_image = Helipad._apply_color_mask(self._image, self._color_mask)
         circle = self.find_circle(filtered_image)
 
         # TODO
@@ -95,7 +105,7 @@ class Helipad:
             circle: npt.ArrayLike,
             color: npt.ArrayLike = np.array([0, 255, 0])
     ):
-        image = np.copy(self.image)
+        image = np.copy(self._image)
 
         if circle is None:
             return image
@@ -106,8 +116,8 @@ class Helipad:
 
         return image
 
-    @classmethod
-    def _show_image(cls, image: npt.ArrayLike):
+    @staticmethod
+    def show_image(image: npt.ArrayLike):
         plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         plt.title("Image")
         plt.axis('off')
